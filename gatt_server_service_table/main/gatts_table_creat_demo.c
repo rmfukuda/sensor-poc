@@ -28,6 +28,7 @@
 #include "esp_bt_main.h"
 #include "gatts_table_creat_demo.h"
 #include "esp_gatt_common_api.h"
+#include "driver/temperature_sensor.h"
 
 #define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
 
@@ -510,8 +511,8 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     } while (0);
 }
 
-void app_main(void)
-{
+
+void task_ble(void *pvParameters){
     esp_err_t ret;
 
     /* Initialize NVS. */
@@ -571,4 +572,36 @@ void app_main(void)
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TABLE_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
+
+    vTaskSuspend(NULL);
+}
+
+
+void task_sensor(void *pvParameters){
+    /* For simplicity, we do not require extra hardware.
+    The code reads the built-in temperature sensor to measure the chip's internal temperature.
+    */
+    static const char *TAG = "temperature";
+
+    ESP_LOGI(TAG, "Install temperature sensor, expected temp ranger range: 10~50 ℃");
+    temperature_sensor_handle_t temp_sensor = NULL;
+    temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
+    ESP_ERROR_CHECK(temperature_sensor_install(&temp_sensor_config, &temp_sensor));
+
+    ESP_LOGI(TAG, "Enable temperature sensor");
+    ESP_ERROR_CHECK(temperature_sensor_enable(temp_sensor));
+
+    ESP_LOGI(TAG, "Read temperature");
+    float tsens_value;
+    while (1) {
+        ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
+        ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+
+void app_main(void) {
+    xTaskCreate(task_ble, "task ble", 8*1024, NULL, 1, NULL);
+    xTaskCreate(task_sensor, "task sensor", 8*1024, NULL, 1, NULL);
 }
