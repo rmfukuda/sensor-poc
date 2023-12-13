@@ -18,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -30,12 +31,12 @@
 #include "esp_gatt_common_api.h"
 #include "driver/temperature_sensor.h"
 
-#define GATTS_TABLE_TAG "GATTS_TABLE_DEMO"
+#define GATTS_TABLE_TAG "GATTS_SENSOR_POC"
 
 #define PROFILE_NUM                 1
 #define PROFILE_APP_IDX             0
 #define ESP_APP_ID                  0x55
-#define SAMPLE_DEVICE_NAME          "ESP_GATTS_DEMO"
+#define SAMPLE_DEVICE_NAME          "SENSOR-POC"
 #define SVC_INST_ID                 0
 
 /* The max length of characteristic value. When the GATT client performs a write or prepare write operation,
@@ -47,6 +48,15 @@
 
 #define ADV_CONFIG_FLAG             (1 << 0)
 #define SCAN_RSP_CONFIG_FLAG        (1 << 1)
+
+
+// semaphore to synchronize tasks
+SemaphoreHandle_t semaphore_sync;
+esp_gatt_if_t ble_gatts_if;
+uint16_t ble_conn_id;
+float sensor_data = 0;
+bool ble_is_connected = false;
+
 
 static uint8_t adv_config_done       = 0;
 
@@ -69,7 +79,7 @@ static uint8_t raw_adv_data[] = {
         /* service uuid */
         0x03, 0x03, 0xFF, 0x00,
         /* device name */
-        0x0f, 0x09, 'E', 'S', 'P', '_', 'G', 'A', 'T', 'T', 'S', '_', 'D','E', 'M', 'O'
+        0x0a, 0x09, 'S', 'E', 'N', 'S', 'O', 'R', '-', 'P', 'O', 'C'
 };
 static uint8_t raw_scan_rsp_data[] = {
         /* flags */
@@ -339,6 +349,8 @@ void example_exec_write_event_env(prepare_type_env_t *prepare_write_env, esp_ble
 
 static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
+    ble_gatts_if = gatts_if;
+    ble_conn_id = param->write.conn_id;
     switch (event) {
         case ESP_GATTS_REG_EVT:{
             esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
@@ -439,6 +451,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGI(GATTS_TABLE_TAG, "SERVICE_START_EVT, status %d, service_handle %d", param->start.status, param->start.service_handle);
             break;
         case ESP_GATTS_CONNECT_EVT:
+            ble_is_connected = true;
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_CONNECT_EVT, conn_id = %d", param->connect.conn_id);
             esp_log_buffer_hex(GATTS_TABLE_TAG, param->connect.remote_bda, 6);
             esp_ble_conn_update_params_t conn_params = {0};
@@ -452,6 +465,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             esp_ble_gap_update_conn_params(&conn_params);
             break;
         case ESP_GATTS_DISCONNECT_EVT:
+            ble_is_connected = false;
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DISCONNECT_EVT, reason = 0x%x", param->disconnect.reason);
             esp_ble_gap_start_advertising(&adv_params);
             break;
@@ -572,7 +586,20 @@ void task_ble(void *pvParameters){
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TABLE_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
+    while(1){
+        xSemaphoreTake(semaphore_sync, portMAX_DELAY);
 
+        uint16_t len = sizeof(float);
+        uint8_t buffer[sizeof(float)];
+        // Copy the float data into the buffer
+        memcpy(buffer, &sensor_data, len);
+        if(ble_is_connected){
+            esp_ble_gatts_send_indicate(
+            ble_gatts_if, ble_conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
+            len, buffer, false
+        );
+        }
+    }
     vTaskSuspend(NULL);
 }
 
@@ -596,12 +623,15 @@ void task_sensor(void *pvParameters){
     while (1) {
         ESP_ERROR_CHECK(temperature_sensor_get_celsius(temp_sensor, &tsens_value));
         ESP_LOGI(TAG, "Temperature value %.02f ℃", tsens_value);
+        sensor_data = tsens_value;
+        xSemaphoreGive(semaphore_sync);
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
 
 void app_main(void) {
+    semaphore_sync = xSemaphoreCreateBinary();
     xTaskCreate(task_ble, "task ble", 8*1024, NULL, 1, NULL);
     xTaskCreate(task_sensor, "task sensor", 8*1024, NULL, 1, NULL);
 }
