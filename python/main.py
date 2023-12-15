@@ -3,6 +3,7 @@ import sqlite3
 import struct
 from datetime import datetime
 
+import plotly.graph_objects as go
 from bleak import BleakClient
 
 
@@ -45,6 +46,7 @@ class SqlData:
             print("ReadingValue:", entry[1])
             print("Timestamp:", entry[2])
             print()
+        return sensor_data
 
 
 class BleData:
@@ -77,6 +79,30 @@ class BleData:
         self.sql.insert(float_value)
 
 
+def data_visualization(sql_query_result):
+    # Unpack the tuples into separate lists for timestamps and temperatures
+    _, temperatures, timestamps = zip(*sql_query_result)
+
+    # Convert timestamps to datetime objects
+    timestamps = [datetime.strptime(ts, "%Y-%m-%d %H:%M:%S") for ts in timestamps]
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=timestamps, y=temperatures, mode="lines+markers", name="Temperature"
+        )
+    )
+    fig.update_layout(
+        title="Temperature Over Time",
+        xaxis_title="Timestamp",
+        yaxis_title="Temperature (Celsius)",
+        xaxis=dict(type="category"),
+    )
+    fig.update_yaxes(range=[0, 75])
+
+    fig.show()
+
+
 async def main(duration):
     ble_obj = BleData(duration)
     await ble_obj.main()
@@ -84,9 +110,14 @@ async def main(duration):
 
 
 if __name__ == "__main__":
-    duration = 5
+    # example code:
+    # sensor read
+    duration = 30
     asyncio.run(main(duration))
 
-    # database read
+    # read the database
     sql_obj = SqlData()
-    sql_obj.select()
+    sensor_data = sql_obj.select()
+
+    # data plot
+    data_visualization(sensor_data)
