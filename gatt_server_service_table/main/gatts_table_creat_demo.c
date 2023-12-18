@@ -31,12 +31,12 @@
 #include "esp_gatt_common_api.h"
 #include "driver/temperature_sensor.h"
 
-#define GATTS_TABLE_TAG "GATTS_SENSOR_POC"
+#define GATTS_TABLE_TAG "SENSOR_POC"
 
 #define PROFILE_NUM                 1
 #define PROFILE_APP_IDX             0
 #define ESP_APP_ID                  0x55
-#define SAMPLE_DEVICE_NAME          "SENSOR-POC"
+#define SAMPLE_DEVICE_NAME          "SENSOR_POC"
 #define SVC_INST_ID                 0
 
 /* The max length of characteristic value. When the GATT client performs a write or prepare write operation,
@@ -79,7 +79,7 @@ static uint8_t raw_adv_data[] = {
         /* service uuid */
         0x03, 0x03, 0xFF, 0x00,
         /* device name */
-        0x0a, 0x09, 'S', 'E', 'N', 'S', 'O', 'R', '-', 'P', 'O', 'C'
+        0x0b, 0x09, 'S', 'E', 'N', 'S', 'O', 'R', '_', 'P', 'O', 'C'
 };
 static uint8_t raw_scan_rsp_data[] = {
         /* flags */
@@ -406,8 +406,8 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                             notify_data[i] = i % 0xff;
                         }
                         //the size of notify_data[] need less than MTU size
-                        esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
-                                                sizeof(notify_data), notify_data, false);
+                        // esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
+                        //                         sizeof(notify_data), notify_data, false);
                     }else if (descr_value == 0x0002){
                         ESP_LOGI(GATTS_TABLE_TAG, "indicate enable");
                         uint8_t indicate_data[15];
@@ -588,12 +588,12 @@ void task_ble(void *pvParameters){
     }
     while(1){
         xSemaphoreTake(semaphore_sync, portMAX_DELAY);
-
-        uint16_t len = sizeof(float);
-        uint8_t buffer[sizeof(float)];
-        // Copy the float data into the buffer
-        memcpy(buffer, &sensor_data, len);
         if(ble_is_connected){
+            // format the float buffer
+            uint16_t len = sizeof(float);
+            uint8_t buffer[sizeof(float)];
+            memcpy(buffer, &sensor_data, len);
+
             esp_ble_gatts_send_indicate(
             ble_gatts_if, ble_conn_id, heart_rate_handle_table[IDX_CHAR_VAL_A],
             len, buffer, false
