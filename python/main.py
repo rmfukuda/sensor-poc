@@ -4,7 +4,7 @@ import struct
 from datetime import datetime
 
 import plotly.graph_objects as go
-from bleak import BleakClient
+from bleak import BleakClient, BleakScanner
 
 
 class SqlData:
@@ -51,15 +51,17 @@ class SqlData:
 
 class BleData:
     def __init__(self, duration) -> None:
-        address = "7C:DF:A1:E6:DF:DA"
         self.notify_characteristic = "0000ff01-0000-1000-8000-00805f9b34fb"
-        self.client = BleakClient(address)
+        self.client = BleakClient("")
         self.sensor_data = []
         self.duration = duration
         self.sql = SqlData()
 
     async def main(self):
         try:
+            firmware_device_name = "SENSOR_POC"
+            device = await BleakScanner.find_device_by_name(firmware_device_name)
+            self.client = BleakClient(device)
             await self.client.connect()
             print(self.client.is_connected)
             await self.client.start_notify(
