@@ -27,7 +27,7 @@
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_main.h"
-#include "gatts_table_creat_demo.h"
+#include "sensor_poc.h"
 #include "esp_gatt_common_api.h"
 #include "driver/temperature_sensor.h"
 
