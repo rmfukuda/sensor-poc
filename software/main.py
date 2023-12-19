@@ -38,7 +38,7 @@ class SqlData:
 
         Parameters
         ----------
-        reading_value : float, optional
+        reading_value
             The sensor reading value to be inserted (default is 25.5).
         """
         # Insert sample sensor data
@@ -130,16 +130,14 @@ class BleData:
             await self.client.stop_notify(self.notify_characteristic)
             await self.client.disconnect()
 
-    def notify_callback(
-        self, characteristic_handle: int, sensor_data: bytearray
-    ) -> None:
+    def notify_callback(self, _, sensor_data: bytearray) -> None:
         """Callback function for handling incoming notifications.
 
         Parameters
         ----------
-        characteristic_handle : int
-            The handle of the characteristic.
-        sensor_data : bytearray
+        _
+            Unused.
+        sensor_data
             The received sensor data.
         """
         float_value = struct.unpack("<f", sensor_data)[0]
@@ -152,7 +150,7 @@ def data_visualization(sql_query_result: List[Tuple[str, float, str]]) -> None:
 
     Parameters
     ----------
-    sql_query_result : List[Tuple[str, float, str]]
+    sql_query_result
         A list of tuples representing temperature data queried from an SQL database.
         Each tuple contains three elements: (id, temperature, timestamp).
 
