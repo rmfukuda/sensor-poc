@@ -19,8 +19,14 @@ class SqlData:
         Cursor for executing SQL commands.
     """
 
-    def __init__(self) -> None:
-        filename = "sensor.db"
+    def __init__(self, filename: str = "sensor.db") -> None:
+        """Class constructor.
+
+        Parameters
+        ----------
+        filename
+            The database filename.
+        """
         self.con = sqlite3.connect(filename)
         self.cursor = self.con.cursor()
         self.cursor.execute(
