@@ -11,6 +11,8 @@ Welcome to sensor-poc's documentation!
    :caption: Contents:
 
 
+   autodoc-src
+
 
 Indices and tables
 ==================
