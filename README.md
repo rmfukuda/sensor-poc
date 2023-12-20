@@ -1,4 +1,4 @@
-![ci badge](https://github.com/rmfukuda/sensor-poc/actions/workflows/ci.yml/badge.svg)
+[![ci badge](https://github.com/rmfukuda/sensor-poc/actions/workflows/ci.yml/badge.svg)](https://github.com/rmfukuda/sensor-poc/actions/workflows/ci.yml)
 
 # Description
 This repository serves as a proof-of-concept (POC) for an application that involves data acquisition and visualization of sensor measurements.
