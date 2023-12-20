@@ -1,0 +1,67 @@
+name: ci
+
+# workflow triggers
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - '**'
+
+jobs:
+  formatter:
+    runs-on: ubuntu-22.04
+    container:
+      image: python:3.11.7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: code formatter
+        run: |
+          python --version
+          pip install wheel
+          pip install black
+          black --check software/
+
+  unittest:
+    runs-on: ubuntu-22.04
+    container:
+      image: python:3.11.7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: unit tests
+        run: |
+          cd software
+          pip install wheel
+          pip install -r requirements.txt
+          python -m unittest discover -b
+
+  docs:
+    runs-on: ubuntu-22.04
+    container:
+      image: python:3.11.7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: sphinx doc
+        run: |
+          cd software
+          pip install wheel
+          pip install -r requirements.txt
+          sphinx-build -b html docs/source docs/_build/
+
+  firmware:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: smoke test
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.1.2
+        target: esp32s3
+        path: 'firmware'
