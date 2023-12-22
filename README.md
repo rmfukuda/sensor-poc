@@ -31,3 +31,11 @@ python3 main.py
 
 The interactive plot can be visualized inside a web browser:
 ![python interactive plot](img/interactive_plot.gif)
+
+
+# Implementation details
+- Testing and Docker: unit tests are configured and executed inside Docker. It allows us to run the automated tests on cloud, for example, during our CI builds.
+- Continuous Integration (CI): the configured CI pipeline for automated testing is presented inside `.github/workflows`.
+- Dependabot: the bot is configured for automatic python dependency updates. Combined with CI, it reduces the code maintenance time.
+- FreeRTOS: the firmware is implemented with FreeRTOS inside two tasks. One task for sensor reading and another task for BLE transmission. The tasks are synchronized using semaphores.
+- SQL: the sensor readings are stored inside the SQL database. SQLite was chosen for its simplicity and native python support without third-party libraries.
