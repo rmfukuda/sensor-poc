@@ -13,7 +13,7 @@ jobs:
   formatter:
     runs-on: ubuntu-22.04
     container:
-      image: python:3.11.7
+      image: python:3.12.2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,7 +27,7 @@ jobs:
   unittest:
     runs-on: ubuntu-22.04
     container:
-      image: python:3.11.7
+      image: python:3.12.2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,7 +41,7 @@ jobs:
   docs:
     runs-on: ubuntu-22.04
     container:
-      image: python:3.11.7
+      image: python:3.12.2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
