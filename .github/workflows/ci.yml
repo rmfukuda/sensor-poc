@@ -20,9 +20,8 @@ jobs:
       - name: code formatter
         run: |
           python --version
-          pip install wheel
-          pip install black
-          black --check software/
+          pip install ruff
+          ruff check software/
 
   unittest:
     runs-on: ubuntu-22.04
