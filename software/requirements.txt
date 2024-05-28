@@ -1,4 +1,4 @@
-bleak==0.21.1
+bleak==0.22.1
 plotly==5.22.0
 pre-commit==3.7.0
 Sphinx==7.3.7
